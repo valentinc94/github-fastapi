@@ -1,18 +1,17 @@
 from fastapi import FastAPI, responses
 
-from .auth import GithubAPI, InvalidCredentials, UnableToUpdateUserData
-from .core import Auth, UserUpdate
+from . import auth, core
 
 app = FastAPI()
 
 
 @app.post("/user/login/")
-async def auth_user(auth: Auth):
-    api = GithubAPI(token=auth.token)
+async def auth_user(auth_data: core.Auth):
+    api = auth.GithubAPI(token=auth_data.token)
 
     try:
         user = api.get_user_data()
-    except InvalidCredentials:
+    except auth.InvalidCredentials:
         return responses.JSONResponse(
             status_code=400,
             content={
@@ -39,8 +38,8 @@ async def auth_user(auth: Auth):
 
 
 @app.put("/user/update/")
-async def update_user(user_update: UserUpdate):
-    api = GithubAPI(token=user_update.auth.token)
+async def update_user(user_update: core.UserUpdate):
+    api = auth.GithubAPI(token=user_update.auth.token)
     user_data = user_update.user.dict()
     user_data = dict(
         filter(
@@ -51,7 +50,7 @@ async def update_user(user_update: UserUpdate):
 
     try:
         user = api.edit_user_data(data=user_data)
-    except InvalidCredentials:
+    except auth.InvalidCredentials:
         return responses.JSONResponse(
             status_code=400,
             content={
@@ -59,7 +58,7 @@ async def update_user(user_update: UserUpdate):
                 "message": "Invalid Credentials.",
             },
         )
-    except UnableToUpdateUserData as e:
+    except auth.UnableToUpdateUserData as e:
         return responses.JSONResponse(
             status_code=400,
             content={
