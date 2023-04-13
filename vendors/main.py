@@ -20,6 +20,14 @@ async def auth_user(auth: Auth):
                 "message": "Invalid Credentials.",
             },
         )
+    except auth.UnableToGetUserData:
+        return responses.JSONResponse(
+            status_code=400,
+            content={
+                "code_transaction": "UNABLE_TO_GE_USER_DATA",
+                "message": "Unable to get User Data.",
+            },
+        )
     else:
         return responses.JSONResponse(
             status_code=200,

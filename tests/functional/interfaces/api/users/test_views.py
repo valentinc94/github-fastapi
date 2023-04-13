@@ -2,7 +2,7 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 from tests.fixtures import load_fixture
-from vendors.auth import InvalidCredentials, UnableToUpdateUserData
+from vendors import auth
 from vendors.main import app
 
 client = TestClient(app)
@@ -22,12 +22,23 @@ def test_auth_user_with_github_return_success(mock_get_user_data):
 
 @mock.patch("vendors.auth.GithubAPI.get_user_data")
 def test_auth_user_with_github_return_invalid_credentials(mock_get_user_data):
-    mock_get_user_data.side_effect = InvalidCredentials()
+    mock_get_user_data.side_effect = auth.InvalidCredentials()
     response = client.post(url="/user/login/", json={"token": "1234"})
     user_data = response.json()
     assert response.status_code == 400
     assert user_data["code_transaction"] == "INVALID_CREDENTIALS"
     assert user_data["message"] == "Invalid Credentials."
+    assert mock_get_user_data.called
+
+
+@mock.patch("vendors.auth.GithubAPI.get_user_data")
+def test_auth_user_with_github_return_unable_to_get_user_data(mock_get_user_data):
+    mock_get_user_data.side_effect = auth.UnableToGetUserData()
+    response = client.post(url="/user/login/", json={"token": "1234"})
+    user_data = response.json()
+    assert response.status_code == 400
+    assert user_data["code_transaction"] == "UNABLE_TO_GE_USER_DATA"
+    assert user_data["message"] == "Unable to get User Data."
     assert mock_get_user_data.called
 
 
@@ -51,7 +62,7 @@ def test_edit_user_with_github_return_success(mock_edit_user_data):
 
 @mock.patch("vendors.auth.GithubAPI.edit_user_data")
 def test_edit_user_with_github_return_invalid_credentials(mock_edit_user_data):
-    mock_edit_user_data.side_effect = InvalidCredentials()
+    mock_edit_user_data.side_effect = auth.InvalidCredentials()
     response = client.put(
         url="/user/update/",
         json={
@@ -68,7 +79,7 @@ def test_edit_user_with_github_return_invalid_credentials(mock_edit_user_data):
 
 @mock.patch("vendors.auth.GithubAPI.edit_user_data")
 def test_edit_user_with_github_return_unable_to_update(mock_edit_user_data):
-    mock_edit_user_data.side_effect = UnableToUpdateUserData("invalid_format")
+    mock_edit_user_data.side_effect = auth.UnableToUpdateUserData("invalid_format")
     response = client.put(
         url="/user/update/",
         json={

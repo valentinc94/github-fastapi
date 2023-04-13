@@ -1,6 +1,10 @@
 import requests
 
 
+class UnableToGetUserData(Exception):
+    pass
+
+
 class UnableToUpdateUserData(Exception):
     pass
 
@@ -22,6 +26,9 @@ class GithubAPI:
         )
         if response.status_code == 401:
             raise InvalidCredentials()
+
+        if response.status_code != 200:
+            raise UnableToGetUserData(response.text)
 
         return response.json()
 
